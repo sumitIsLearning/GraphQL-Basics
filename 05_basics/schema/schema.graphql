@@ -1,0 +1,46 @@
+# Define your schema here
+input MessageInput {
+  content:String
+  author:String
+}
+
+input LoginInput {
+  username: String
+  passWord: String
+}
+
+input SignUp {
+  username: String
+  Email: String
+  passWord: String
+}
+
+type user {
+  id:ID!
+  name: String
+  contact: String
+}
+
+type Message {
+  id:ID!
+  content: String
+  author: String
+}
+
+type SignUpResponse {
+  token: String
+  message: String
+}
+
+type Mutation {
+  setMessage(input:MessageInput):Message
+  updateMessage(input:MessageInput):Message
+  login(input:LoginInput):String
+  signUp(input:SignUp): SignUpResponse
+}
+
+type Query {
+  hello: String
+  getMessage: [Message]
+  get(id:ID!): Message
+}
