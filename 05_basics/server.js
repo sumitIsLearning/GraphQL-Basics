@@ -5,12 +5,14 @@ require('dotenv').config();
   const path = require('path');
   const fs = require('fs');
   const cors = require('cors');
-  const jwt = require('jsonwebtoken')
+  const jwt = require('jsonwebtoken');
   
   const schemaPath = path.join(__dirname, 'schema', 'schema.graphql');
   const schemaString = fs.readFileSync(schemaPath, 'utf8');
   const schema = buildSchema(schemaString);
   
+
+
   const rootValue = {
     hello: () => 'Hello, world!'
   };

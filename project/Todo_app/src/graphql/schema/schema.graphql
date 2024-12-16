@@ -1,0 +1,45 @@
+# Define your schema here
+
+input SignUpInput {
+  userName:String
+  email:String
+  contact:String
+  password:String
+}
+
+input SignInInput {
+  userName:String
+  password:String
+}
+
+input TaskInput {
+  title:String
+  description:String
+}
+
+type UserTask {
+  id:ID!
+  title:String
+  description:String
+  status:Boolean
+}
+
+type token {
+  token:String
+}
+
+type Mutation {
+  signUp(input:SignUpInput):String
+  signIn(input:SignInInput):token
+  createTask(input:TaskInput):UserTask
+  updateTask(id:ID! , input:TaskInput):UserTask
+  statusUpdate(id:ID!):UserTask
+  deleteTask(id:ID!):String
+}
+
+
+type Query {
+  getTasks:[UserTask]
+  getLimitedTasks(status:Boolean , limit:Int):[UserTask]
+  getTask(id:ID!):UserTask
+}
