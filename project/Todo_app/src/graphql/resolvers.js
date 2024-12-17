@@ -1,7 +1,7 @@
 // Resolvers for GraphQL queries and mutations
 require('dotenv').config();
 const fs = require("fs");
-var jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 
 const todosFileAddress = "./src/utils/Todo.json";
 const usersFileAddress = "./src/utils/users.json";
@@ -30,8 +30,51 @@ function getRandomId() {
   return Date.now().toString() + Math.floor(Math.random() * 100000).toString();
 }
 
+
+// user login/signUp
+function signUp({ input: { userName, email, contact, password } }) {
+  try {
+    const users = readData(usersFileAddress);
+
+    const user = {
+      id: getRandomId(),
+      userName,
+      email,
+      contact,
+      password,
+    };
+
+    writeData(usersFileAddress, [...users, user]);
+    return "Successfully SignedUp";
+  } catch (err) {
+    console.error(`Error signingUp: ${err.message}`);
+  }
+}
+
+function signIn({input:{userName , password}}) {
+  try{
+    const users = readData(usersFileAddress);
+
+    const foundUser = users.find(user => ((user.userName === userName) && (user.password === password)))
+
+    if(!foundUser) throw new Error("user Not found");
+
+    const payload = {
+      id:foundUser.id,
+      timeStamp: Date.now()
+    }
+    
+    const token = jwt.sign(payload , secretKey , {expiresIn:'1h'});
+
+    return {token};
+
+  } catch(err) {
+    console.error(`Error signIngIn: ${err.message}`)
+  }
+}
+
 //creating tasks
-function createTask({ input: { title, description } }) {
+function createTask({ input: { title, description } } , context) {
   if (!title || !description)
     throw new Error("Title and description are Required");
 
@@ -39,6 +82,7 @@ function createTask({ input: { title, description } }) {
     const todos = readData(todosFileAddress);
 
     const newTodo = {
+      userId: context.userId,
       id: getRandomId(),
       title: title,
       description: description,
@@ -104,75 +148,44 @@ function deleteTask({ id }) {
 }
 
 // user getting tasks
-function getTasks() {
+function getTasks(args , context) {
+  const id = context.userId;
   const todos = readData(todosFileAddress);
-  return todos;
+  const foundTodos = todos.map(todo => todo.userId === id ? todo : null);
+  
+  return foundTodos;
 }
 
-function getTask({ id }) {
+function getTask({ id } , context) {
   if (!id) throw new Error("id are Required");
 
   try {
     const todos = readData(todosFileAddress);
     const foundTodo = todos.find((todo) => todo.id === id);
 
-    return foundTodo;
+    if(!foundTodo) return "Todo is not present"
+
+    if(foundTodo.userId === context.userId) {
+      return foundTodo;
+    } else {
+      return {message:"Forbidden"}
+    }
+    
   } catch (err) {
     console.error(`Error creating task: ${err.message}`);
   }
 }
 
-function getLimitedTasks({ status = true, limit = 20 }) {
+function getLimitedTasks({ status = true, limit = 20 } , context) {
   const todos = readData(todosFileAddress);
 
   const filteredTodos = todos.filter(
-    (todo, index) => index < limit && todo.status === status
+    (todo, index) => (index < limit) && (todo.status === status) && (todo.userId === context.userId)
   );
 
   return filteredTodos;
 }
 
-// user login/signUp
-function signUp({ input: { userName, email, contact, password } }) {
-  try {
-    const users = readData(usersFileAddress);
-
-    const user = {
-      id: getRandomId(),
-      userName,
-      email,
-      contact,
-      password,
-    };
-
-    writeData(usersFileAddress, [...users, user]);
-    return "Successfully SignedUp";
-  } catch (err) {
-    console.error(`Error signingUp: ${err.message}`);
-  }
-}
-
-function signIn({input:{userName , password}}) {
-  try{
-    const users = readData(usersFileAddress);
-
-    const foundUser = users.find(user => ((user.userName === userName) && (user.password === password)))
-
-    if(!foundUser) throw new Error("user Not found");
-
-    const payload = {
-      id:foundUser.id,
-      timeStamp: Date.now()
-    }
-    
-    const token = jwt.sign(payload , secretKey , {expiresIn:'1h'});
-
-    return {token};
-
-  } catch(err) {
-    console.error(`Error signIngIn: ${err.message}`)
-  }
-}
 
 const rootValue = {
   signUp: signUp,
